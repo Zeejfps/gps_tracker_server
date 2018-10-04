@@ -2,14 +2,16 @@ const express = require('express');
 const auth = require('basic-auth');
 const Joi = require('joi');
 const LocationSchema = require('./schemas');
+const Queue = require('double-ended-queue');
 
-const locationsList = [];
+const kMaxLocations = 100;
+const locationsQueue = new Queue(kMaxLocations);
 
 const locations = new express.Router();
 locations.use(express.json());
 
 locations.get('/newest', function(req, res) {
-  const newest = locationsList[locationsList.length-1];
+  const newest = locationsQueue[locationsQueue.length-1];
   if (!newest) {
     return res.status(404).send('No location found');
   }
@@ -17,7 +19,7 @@ locations.get('/newest', function(req, res) {
 });
 
 locations.get('/', function(req, res) {
-  res.json(locationsList);
+  res.json(locationsQueue);
 });
 
 locations.post('/', function(req, res) {
@@ -31,7 +33,10 @@ locations.post('/', function(req, res) {
     return res.status(400).send(result.error);
   }
   result.value.timestamp = new Date().toISOString();
-  locationsList.push(result.value);
+  locationsQueue.enqueue(result.value);
+  if (locationsQueue.length > kMaxLocations) {
+    locationsQueue.dequeue();
+  }
   return res.json(result.value);
 });
 
