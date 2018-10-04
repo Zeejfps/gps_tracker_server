@@ -9,7 +9,11 @@ const locations = new express.Router();
 locations.use(express.json());
 
 locations.get('/newest', function(req, res) {
-  res.json(locationsList[locationsList.length-1]);
+  const newest = locationsList[locationsList.length-1];
+  if (!newest) {
+    return res.status(404).send('No location found');
+  }
+  return res.json(newest);
 });
 
 locations.get('/', function(req, res) {
