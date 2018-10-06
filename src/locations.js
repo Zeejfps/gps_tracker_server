@@ -19,7 +19,19 @@ locations.get('/newest', function(req, res) {
 });
 
 locations.get('/', function(req, res) {
-  res.json(locationsQueue);
+  if (req.query.limit) {
+    const limit = req.query.limit;
+    const results = [];
+    let len = limit;
+    if (len > locationsQueue.length) {
+      len = locationsQueue.length;
+    }
+    for (let i = len-1; i >= 0; i--) {
+      results.push(locationsQueue.get(i));
+    }
+    return res.json(results);
+  }
+  return res.json(locationsQueue);
 });
 
 locations.post('/', function(req, res) {
